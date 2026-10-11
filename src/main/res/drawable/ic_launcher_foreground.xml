@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- بدنه‌ی پنل آیفون -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M45,26 h18 a8,8 0 0 1 8,8 v40 a8,8 0 0 1 -8,8 h-18 a8,8 0 0 1 -8,-8 v-40 a8,8 0 0 1 8,-8 z" />
+    <!-- صفحه‌ی نمایش -->
+    <path
+        android:fillColor="#2A729C"
+        android:pathData="M46,31 h16 a4,4 0 0 1 4,4 v15 a4,4 0 0 1 -4,4 h-16 a4,4 0 0 1 -4,-4 v-15 a4,4 0 0 1 4,-4 z" />
+    <!-- موج صدا روی صفحه -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2.4"
+        android:strokeLineCap="round"
+        android:pathData="M47,43 L47,45 M51,40 L51,48 M55,37 L55,51 M59,40 L59,48 M63,43 L63,45" />
+    <!-- شبکه‌ی بلندگو -->
+    <path
+        android:strokeColor="#8DBBD2"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:pathData="M46,59 L62,59 M46,63.5 L62,63.5" />
+    <!-- دکمه‌ی زنگ -->
+    <path
+        android:fillColor="#1B5282"
+        android:pathData="M54,72 m-4.2,0 a4.2,4.2 0 1 0 8.4,0 a4.2,4.2 0 1 0 -8.4,0" />
+</vector>

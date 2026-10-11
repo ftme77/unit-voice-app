@@ -1,0 +1,345 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/scroll"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_screen"
+    android:fillViewport="true"
+    android:overScrollMode="never">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layoutDirection="rtl"
+        android:orientation="vertical"
+        android:paddingBottom="28dp"
+        android:paddingLeft="22dp"
+        android:paddingRight="22dp"
+        android:paddingTop="26dp">
+
+        <!-- سرتیتر -->
+        <ImageView
+            android:layout_width="44dp"
+            android:layout_height="28dp"
+            android:layout_gravity="center_horizontal"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_checks" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:gravity="center"
+            android:text="آیفون هوشمند"
+            android:textColor="#1B5282"
+            android:textSize="26sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:gravity="center"
+            android:text="تشخیص شماره‌ی واحد از گفتار فارسی"
+            android:textColor="#46647E"
+            android:textSize="14sp" />
+
+        <!-- کارت راهنما -->
+        <LinearLayout
+            android:id="@+id/tipCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="22dp"
+            android:background="@drawable/card"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:id="@+id/tipTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="start"
+                android:text="راهنما"
+                android:textColor="#2A729C"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tipBody"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:gravity="start"
+                android:lineSpacingExtra="3dp"
+                android:text="دکمه را بزنید و مثلاً بگویید «واحد هشتاد و دو»"
+                android:textColor="#46647E"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <!-- کارت نتیجه -->
+        <LinearLayout
+            android:id="@+id/resultCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:background="@drawable/bg_result"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:padding="20dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/resultLabel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="شماره‌ی واحد"
+                android:textColor="#CFE3EE"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/resultText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:gravity="center"
+                android:includeFontPadding="false"
+                android:textColor="#FFFFFF"
+                android:textSize="72sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/rawText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center"
+                android:lineSpacingExtra="3dp"
+                android:textColor="#CFE3EE"
+                android:textSize="13sp" />
+        </LinearLayout>
+
+        <!-- دکمه‌ی ضبط -->
+        <FrameLayout
+            android:id="@+id/recordWrap"
+            android:layout_width="160dp"
+            android:layout_height="160dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="26dp"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:id="@+id/recordRing"
+                android:layout_width="160dp"
+                android:layout_height="160dp"
+                android:layout_gravity="center"
+                android:contentDescription="@null"
+                android:src="@drawable/ring_red"
+                android:visibility="invisible" />
+
+            <View
+                android:id="@+id/recordCircle"
+                android:layout_width="132dp"
+                android:layout_height="132dp"
+                android:layout_gravity="center"
+                android:background="@drawable/bg_rec_blue"
+                android:elevation="8dp" />
+
+            <ImageView
+                android:id="@+id/recordIcon"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:layout_gravity="center"
+                android:contentDescription="@null"
+                android:elevation="9dp"
+                android:src="@drawable/ic_mic" />
+
+            <ProgressBar
+                android:id="@+id/spinner"
+                android:layout_width="96dp"
+                android:layout_height="96dp"
+                android:layout_gravity="center"
+                android:indeterminate="true"
+                android:indeterminateTint="#2A729C"
+                android:visibility="gone" />
+        </FrameLayout>
+
+        <TextView
+            android:id="@+id/recordLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:gravity="center"
+            android:text="ضبط صدا"
+            android:textColor="#1A4C7C"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/timerText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:gravity="center"
+            android:textColor="#46647E"
+            android:textSize="13sp"
+            android:visibility="gone" />
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="6dp"
+            android:layout_marginLeft="40dp"
+            android:layout_marginRight="40dp"
+            android:layout_marginTop="10dp"
+            android:max="100"
+            android:progressBackgroundTint="#D3E0E8"
+            android:progressTint="#2A729C"
+            android:visibility="gone" />
+
+        <!-- وضعیت -->
+        <TextView
+            android:id="@+id/statusText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="18dp"
+            android:background="@drawable/chip_ok"
+            android:gravity="center"
+            android:paddingBottom="8dp"
+            android:paddingLeft="18dp"
+            android:paddingRight="18dp"
+            android:paddingTop="8dp"
+            android:text="آماده"
+            android:textColor="#1A4C7C"
+            android:textSize="14sp" />
+
+        <!-- ورود دستی شماره (برای کسانی که نمی‌توانند صحبت کنند) -->
+        <LinearLayout
+            android:id="@+id/manualCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/card"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:id="@+id/manualTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="start"
+                android:lineSpacingExtra="4dp"
+                android:text="در صورتی که در گفتار مشکل دارید یا شرایط ضبط صدا را ندارید، می‌توانید عدد واحد مورد نظر را در باکس زیر تایپ کنید."
+                android:textColor="#1A4C7C"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <EditText
+                android:id="@+id/manualInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_input"
+                android:digits="0123456789۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩"
+                android:gravity="center"
+                android:hint="مثلاً ۸۲"
+                android:imeOptions="actionDone"
+                android:inputType="number"
+                android:maxLength="3"
+                android:minHeight="52dp"
+                android:padding="12dp"
+                android:textColor="#1A2B3C"
+                android:textColorHint="#8FA0A9"
+                android:textSize="22sp" />
+
+            <TextView
+                android:id="@+id/manualButton"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_btn"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:text="ثبت شماره"
+                android:textColor="#FFFFFF"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- تنظیمات سرور (پیش‌فرض بسته) -->
+        <LinearLayout
+            android:id="@+id/settingsToggle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="22dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="10dp">
+
+            <ImageView
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_settings" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="تنظیمات سرور"
+                android:textColor="#2A729C"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/settingsPanel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:background="@drawable/card"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="start"
+                android:text="آدرس سرور"
+                android:textColor="#2A729C"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <EditText
+                android:id="@+id/serverUrl"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:gravity="start"
+                android:hint="https://..."
+                android:inputType="textUri"
+                android:layoutDirection="ltr"
+                android:textColor="#1A2B3C"
+                android:textDirection="ltr"
+                android:textSize="14sp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="start"
+                android:lineSpacingExtra="3dp"
+                android:text="آدرسی را که نوت‌بوک سرور می‌دهد (با https شروع می‌شود) اینجا بگذارید. فقط یک‌بار لازم است و ذخیره می‌شود."
+                android:textColor="#46647E"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>
