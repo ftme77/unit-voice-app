@@ -6,6 +6,9 @@ on:
   workflow_dispatch:
 
 jobs:
+  # ---------------------------------------------------------------------------
+  # ۱) اپ قبلی (فقط با سرور) — دقیقاً همان مراحلی که قبلاً درست کار کرد
+  # ---------------------------------------------------------------------------
   build:
     runs-on: ubuntu-latest
     steps:
@@ -46,3 +49,158 @@ jobs:
         with:
           name: unit-voice-apk
           path: app/build/outputs/apk/debug/app-debug.apk
+
+  # ---------------------------------------------------------------------------
+  # ۲) اپ جدید با Whisper داخل خود گوشی (کنار اپ قبلی ساخته می‌شود؛ اگر خطا بدهد اپ قبلی سالم می‌ماند)
+  #    فایل local-whisper.zip باید در ریشه‌ی همین مخزن آپلود شده باشد.
+  # ---------------------------------------------------------------------------
+  build-local:
+    runs-on: ubuntu-latest
+    env:
+      # نسخه‌ی whisper.cpp (اولین تگی که پیدا شود استفاده می‌شود)
+      WHISPER_CPP_TAGS: "v1.9.1 v1.7.6"
+      # مدل داخل گوشی. برای مدل سبک‌تر و سریع‌تر (ولی کم‌دقت‌تر) بنویسید: base-q5_1
+      WHISPER_MODEL: "small-q5_1"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Fix folder layout (if the app files were uploaded one level too high)
+        run: |
+          if [ -d src/main ] && [ -f build.gradle ] && ! grep -q "apply false" build.gradle; then
+            echo "Flat layout detected - moving files into app/"
+            rm -rf app/src
+            mkdir -p app
+            mv src app/src
+            mv build.gradle app/build.gradle
+            printf "plugins {\n    id 'com.android.application' version '8.5.2' apply false\n}\n" > build.gradle
+          else
+            echo "Layout already correct"
+          fi
+
+      - name: Add the local-Whisper files (from local-whisper.zip)
+        run: |
+          set -e
+          rm -rf _lw
+          if [ -f local-whisper.zip ]; then
+            mkdir _lw
+            unzip -q local-whisper.zip -d _lw
+            SRC=_lw
+          elif [ -d local-whisper ]; then
+            SRC=local-whisper
+          else
+            echo "ERROR: local-whisper.zip was not found in the repository root."
+            echo "Upload local-whisper.zip to the main page of the repository first."
+            exit 1
+          fi
+          GRADLE_FILE=$(find "$SRC" -name app-build.gradle | head -1)
+          if [ -z "$GRADLE_FILE" ]; then
+            echo "ERROR: app-build.gradle not found inside local-whisper.zip. Files found:"
+            find "$SRC" -type f | head -50
+            exit 1
+          fi
+          L=$(dirname "$GRADLE_FILE")
+          M=app/src/main
+          cp "$L/app-build.gradle" app/build.gradle
+          cp "$L/AndroidManifest.xml" "$M/AndroidManifest.xml"
+          mkdir -p "$M/java/ir/semnan/unitvoice" "$M/cpp" "$M/res/layout" "$M/res/drawable"
+          cp "$L"/java/*.java "$M/java/ir/semnan/unitvoice/"
+          cp "$L"/cpp/* "$M/cpp/"
+          cp "$L/res/layout/activity_main.xml" "$M/res/layout/"
+          cp "$L"/res/drawable/*.xml "$M/res/drawable/"
+          rm -rf _lw
+          echo "--- added files ---"
+          ls -la "$M/java/ir/semnan/unitvoice" "$M/cpp"
+
+      - name: Get whisper.cpp source
+        run: |
+          set -e
+          cd app/src/main/cpp
+          ok=0
+          for tag in $WHISPER_CPP_TAGS; do
+            rm -rf whisper.cpp
+            if git clone --depth 1 --branch "$tag" https://github.com/ggml-org/whisper.cpp.git whisper.cpp; then
+              echo "Using whisper.cpp $tag"
+              ok=1
+              break
+            fi
+          done
+          if [ "$ok" = "0" ]; then
+            rm -rf whisper.cpp
+            git clone --depth 1 https://github.com/ggml-org/whisper.cpp.git whisper.cpp
+            echo "Using whisper.cpp default branch"
+          fi
+          rm -rf whisper.cpp/.git
+          ls whisper.cpp | head -30
+
+      - name: Download the Whisper model
+        run: |
+          set -e
+          mkdir -p app/src/main/assets/models
+          URL="https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-${WHISPER_MODEL}.bin"
+          echo "Downloading $URL"
+          curl -L --fail --retry 5 --retry-delay 10 -o app/src/main/assets/models/whisper-model.bin "$URL"
+          ls -la app/src/main/assets/models
+          SIZE=$(stat -c %s app/src/main/assets/models/whisper-model.bin)
+          MAGIC=$(head -c 4 app/src/main/assets/models/whisper-model.bin | od -An -tx1 | tr -d ' \n')
+          echo "size=$SIZE magic=$MAGIC"
+          if [ "$SIZE" -lt 20000000 ] || [ "$MAGIC" != "6c6d6767" ]; then
+            echo "ERROR: the downloaded file does not look like a ggml Whisper model."
+            exit 1
+          fi
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
+      - name: Pick NDK and CMake versions
+        run: |
+          set -e
+          SDK="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+          echo "Android SDK: $SDK"
+          ls "$SDK/ndk" 2>/dev/null || echo "(no NDK folder)"
+          ls "$SDK/cmake" 2>/dev/null || echo "(no cmake folder)"
+          ALL_NDK=$(ls "$SDK/ndk" 2>/dev/null | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V || true)
+          # ترجیح: جدیدترین نسخه‌ی ۲۷ یا قدیمی‌تر (آزمودهٔ بیشتر)، وگرنه جدیدترین موجود
+          NDK=$(echo "$ALL_NDK" | grep -E '^([0-9]|1[0-9]|2[0-7])\.' | tail -1 || true)
+          if [ -z "$NDK" ]; then
+            NDK=$(echo "$ALL_NDK" | tail -1 || true)
+          fi
+          if [ -z "$NDK" ]; then
+            yes | sdkmanager --licenses > /dev/null || true
+            sdkmanager "ndk;26.3.11579264"
+            NDK=26.3.11579264
+          fi
+          if [ -d "$SDK/cmake/3.22.1" ]; then
+            CM=3.22.1
+          else
+            CM=$(ls "$SDK/cmake" 2>/dev/null | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1 || true)
+          fi
+          if [ -z "$CM" ]; then
+            yes | sdkmanager --licenses > /dev/null || true
+            sdkmanager "cmake;3.22.1"
+            CM=3.22.1
+          fi
+          echo "NDK_VERSION=$NDK" >> "$GITHUB_ENV"
+          echo "CMAKE_VERSION=$CM" >> "$GITHUB_ENV"
+          echo "Using NDK $NDK and CMake $CM"
+
+      - name: Build debug APK (with local Whisper)
+        run: gradle assembleDebug --no-daemon -PndkVersion="$NDK_VERSION" -PcmakeVersion="$CMAKE_VERSION"
+
+      - name: APK size
+        run: ls -la app/build/outputs/apk/debug/
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-voice-apk-local
+          path: app/build/outputs/apk/debug/app-debug.apk
+          compression-level: 0
