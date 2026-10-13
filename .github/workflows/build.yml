@@ -51,16 +51,32 @@ jobs:
           path: app/build/outputs/apk/debug/app-debug.apk
 
   # ---------------------------------------------------------------------------
-  # ۲) اپ جدید با Whisper داخل خود گوشی (کنار اپ قبلی ساخته می‌شود؛ اگر خطا بدهد اپ قبلی سالم می‌ماند)
+  # ۲) اپ‌های جدید با Whisper داخل خود گوشی (کنار اپ قبلی ساخته می‌شوند؛ اگر خطا بدهند اپ قبلی سالم می‌ماند)
   #    فایل local-whisper.zip باید در ریشه‌ی همین مخزن آپلود شده باشد.
+  #    دو نسخه ساخته می‌شود:
+  #      «محلی» : مدل small  (دقیق‌تر، حدود ۱۹۰ مگابایت، به رم بیشتری نیاز دارد)
+  #      «سبک»  : مدل base   (کم‌دقت‌تر ولی خیلی سبک‌تر و سریع‌تر؛ برای گوشی‌های ضعیف‌تر)
   # ---------------------------------------------------------------------------
   build-local:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - model: small-q5_1
+            app_id: ir.semnan.unitvoice.smart.local
+            app_label: "آیفون هوشمند (محلی)"
+            artifact: unit-voice-apk-local
+          - model: base-q5_1
+            app_id: ir.semnan.unitvoice.smart.light
+            app_label: "آیفون هوشمند (سبک)"
+            artifact: unit-voice-apk-light
     env:
       # نسخه‌ی whisper.cpp (اولین تگی که پیدا شود استفاده می‌شود)
       WHISPER_CPP_TAGS: "v1.9.1 v1.7.6"
-      # مدل داخل گوشی. برای مدل سبک‌تر و سریع‌تر (ولی کم‌دقت‌تر) بنویسید: base-q5_1
-      WHISPER_MODEL: "small-q5_1"
+      WHISPER_MODEL: ${{ matrix.model }}
+      APP_ID: ${{ matrix.app_id }}
+      APP_LABEL: ${{ matrix.app_label }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -103,6 +119,11 @@ jobs:
           M=app/src/main
           cp "$L/app-build.gradle" app/build.gradle
           cp "$L/AndroidManifest.xml" "$M/AndroidManifest.xml"
+          # نام و شناسه‌ی اپ را برای هر نسخه (محلی / سبک) تنظیم کن تا هر دو کنار هم نصب شوند
+          sed -i "s|applicationId \"[^\"]*\"|applicationId \"${APP_ID}\"|" app/build.gradle
+          sed -i "s|android:label=\"[^\"]*\"|android:label=\"${APP_LABEL}\"|" "$M/AndroidManifest.xml"
+          grep -n "applicationId" app/build.gradle
+          grep -n "android:label" "$M/AndroidManifest.xml"
           mkdir -p "$M/java/ir/semnan/unitvoice" "$M/cpp" "$M/res/layout" "$M/res/drawable"
           cp "$L"/java/*.java "$M/java/ir/semnan/unitvoice/"
           cp "$L"/cpp/* "$M/cpp/"
@@ -192,7 +213,7 @@ jobs:
           echo "CMAKE_VERSION=$CM" >> "$GITHUB_ENV"
           echo "Using NDK $NDK and CMake $CM"
 
-      - name: Build debug APK (with local Whisper)
+      - name: Build debug APK (with local Whisper, ${{ matrix.model }})
         run: gradle assembleDebug --no-daemon -PndkVersion="$NDK_VERSION" -PcmakeVersion="$CMAKE_VERSION"
 
       - name: APK size
@@ -201,6 +222,6 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: unit-voice-apk-local
+          name: ${{ matrix.artifact }}
           path: app/build/outputs/apk/debug/app-debug.apk
           compression-level: 0
