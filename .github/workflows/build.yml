@@ -71,10 +71,17 @@ jobs:
             app_id: ir.semnan.unitvoice.smart.light
             app_label: "آیفون هوشمند (سبک)"
             artifact: unit-voice-apk-light
+          # «فارسی»: مدل small که روی داده‌ی فارسی آموزش بیشتر دیده؛ در همین کار به قالب ggml تبدیل می‌شود
+          - model: persian-small-q5_1
+            hf_repo: steja/whisper-small-persian
+            app_id: ir.semnan.unitvoice.smart.fa
+            app_label: "آیفون هوشمند (فارسی)"
+            artifact: unit-voice-apk-persian
     env:
       # نسخه‌ی whisper.cpp (اولین تگی که پیدا شود استفاده می‌شود)
       WHISPER_CPP_TAGS: "v1.9.1 v1.7.6"
       WHISPER_MODEL: ${{ matrix.model }}
+      HF_REPO: ${{ matrix.hf_repo }}
       APP_ID: ${{ matrix.app_id }}
       APP_LABEL: ${{ matrix.app_label }}
     steps:
@@ -173,9 +180,38 @@ jobs:
         run: |
           set -e
           mkdir -p app/src/main/assets/models
-          URL="https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-${WHISPER_MODEL}.bin"
-          echo "Downloading $URL"
-          curl -L --fail --retry 5 --retry-delay 10 -o app/src/main/assets/models/whisper-model.bin "$URL"
+          if [ -n "${HF_REPO}" ]; then
+            # --- مدل فارسی‌آموزش‌دیده: دانلود از Hugging Face و تبدیل به ggml + فشرده‌سازی q5_1 ---
+            echo "Converting ${HF_REPO} to ggml"
+            python3 -m venv _venv
+            . _venv/bin/activate
+            pip install --quiet --upgrade pip
+            pip install --quiet torch --index-url https://download.pytorch.org/whl/cpu
+            pip install --quiet transformers huggingface_hub safetensors numpy
+            git clone --depth 1 https://github.com/openai/whisper.git _owhisper
+            python - <<'PY'
+          import os, shutil
+          from huggingface_hub import snapshot_download, hf_hub_download
+          repo = os.environ["HF_REPO"]
+          snapshot_download(repo_id=repo, local_dir="_hfmodel",
+                            allow_patterns=["config.json", "generation_config.json", "model.safetensors", "pytorch_model.bin"])
+          # فایل‌های واژگان در همه‌ی مدل‌های Whisper یکی‌اند؛ از مدل اصلی برداشته می‌شود تا به فایل‌های ناقص وابسته نباشیم
+          for f in ("vocab.json", "added_tokens.json"):
+              shutil.copy(hf_hub_download("openai/whisper-small", f), os.path.join("_hfmodel", f))
+          print(sorted(os.listdir("_hfmodel")))
+          PY
+            mkdir -p _ggml
+            python app/src/main/cpp/whisper.cpp/models/convert-h5-to-ggml.py _hfmodel _owhisper _ggml
+            ls -la _ggml
+            cmake -S app/src/main/cpp/whisper.cpp -B _qb -DCMAKE_BUILD_TYPE=Release -DWHISPER_BUILD_EXAMPLES=ON -DWHISPER_BUILD_TESTS=OFF -DWHISPER_BUILD_SERVER=OFF
+            cmake --build _qb --target whisper-quantize -j4
+            ./_qb/bin/whisper-quantize _ggml/ggml-model.bin app/src/main/assets/models/whisper-model.bin q5_1
+            deactivate
+          else
+            URL="https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-${WHISPER_MODEL}.bin"
+            echo "Downloading $URL"
+            curl -L --fail --retry 5 --retry-delay 10 -o app/src/main/assets/models/whisper-model.bin "$URL"
+          fi
           ls -la app/src/main/assets/models
           SIZE=$(stat -c %s app/src/main/assets/models/whisper-model.bin)
           MAGIC=$(head -c 4 app/src/main/assets/models/whisper-model.bin | od -An -tx1 | tr -d ' \n')
