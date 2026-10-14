@@ -98,14 +98,29 @@ jobs:
         run: |
           set -e
           rm -rf _lw
-          if [ -f local-whisper.zip ]; then
+          # اگر مرورگر اسم فایل را عوض کرده باشد (مثلاً «local-whisper (2).zip») مشکلی نیست:
+          # از بین همه‌ی فایل‌های local-whisper*.zip، آن که شماره‌ی نسخه‌ی (versionCode) بالاتری دارد انتخاب می‌شود.
+          BEST=""
+          BESTV=-1
+          for Z in local-whisper*.zip; do
+            if [ -f "$Z" ]; then
+              V=$(unzip -p "$Z" '*app-build.gradle' 2>/dev/null | grep -oE 'versionCode[[:space:]]+[0-9]+' | grep -oE '[0-9]+' | head -1 || true)
+              echo "zip found: '$Z'  versionCode=${V:-unknown}"
+              if [ -n "$V" ] && [ "$V" -gt "$BESTV" ]; then
+                BEST="$Z"
+                BESTV="$V"
+              fi
+            fi
+          done
+          if [ -n "$BEST" ]; then
+            echo "USING: '$BEST' (versionCode $BESTV)"
             mkdir _lw
-            unzip -q local-whisper.zip -d _lw
+            unzip -q "$BEST" -d _lw
             SRC=_lw
           elif [ -d local-whisper ]; then
             SRC=local-whisper
           else
-            echo "ERROR: local-whisper.zip was not found in the repository root."
+            echo "ERROR: no local-whisper*.zip was found in the repository root."
             echo "Upload local-whisper.zip to the main page of the repository first."
             exit 1
           fi
